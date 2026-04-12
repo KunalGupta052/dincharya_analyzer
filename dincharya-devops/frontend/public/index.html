@@ -991,6 +991,14 @@ function resetAll(){
   document.getElementById('sv').textContent='5';
   goTo(0);
 }
+  // CSP workaround: convert inline onclick to event listeners
+   document.querySelectorAll('[onclick]').forEach(el => {
+     const code = el.getAttribute('onclick');
+     el.removeAttribute('onclick');
+     el.addEventListener('click', function() {
+       new Function(code).call(this);
+     });
+   });
 </script>
 </body>
 </html>
