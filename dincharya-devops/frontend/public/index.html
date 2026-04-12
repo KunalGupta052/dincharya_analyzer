@@ -991,14 +991,31 @@ function resetAll(){
   document.getElementById('sv').textContent='5';
   goTo(0);
 }
-  // CSP workaround: convert inline onclick to event listeners
-   document.querySelectorAll('[onclick]').forEach(el => {
-     const code = el.getAttribute('onclick');
-     el.removeAttribute('onclick');
-     el.addEventListener('click', function() {
-       new Function(code).call(this);
-     });
-   });
+  // CSP-safe onclick router (no eval)
+document.querySelectorAll('[onclick]').forEach(el => {
+  const code = el.getAttribute('onclick');
+  el.removeAttribute('onclick');
+  el.addEventListener('click', function(e) {
+    // Parse: funcName(arg1, arg2, ...)
+    const match = code.match(/^(\w+)\((.*)\)$/);
+    if (!match) return;
+    const fnName = match[1];
+    const argsStr = match[2].trim();
+    let args = [];
+    if (argsStr) {
+      args = argsStr.split(',').map(a => {
+        a = a.trim();
+        if (a === 'this') return el;
+        if (/^['"].*['"]$/.test(a)) return a.slice(1, -1);
+        if (!isNaN(a)) return Number(a);
+        return a;
+      });
+    }
+    if (typeof window[fnName] === 'function') {
+      window[fnName].apply(el, args);
+    }
+  });
+});
 </script>
 </body>
 </html>
