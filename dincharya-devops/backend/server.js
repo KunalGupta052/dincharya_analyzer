@@ -38,11 +38,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"]
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
     }
   }
 }));
@@ -205,15 +204,20 @@ app.get('*', (req, res) => {
 });
 
 // ── Start Server ───────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(JSON.stringify({
-    level: 'INFO',
-    message: `Dinacharya Analyzer started`,
-    port: PORT,
-    environment: NODE_ENV,
-    timestamp: new Date().toISOString(),
-  }));
-});
+// Guarded so requiring this module (as server.test.js does) doesn't spin up
+// a real, unclosed server — that was hanging every test run and would have
+// hung CI indefinitely instead of failing cleanly.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(JSON.stringify({
+      level: 'INFO',
+      message: `Dinacharya Analyzer started`,
+      port: PORT,
+      environment: NODE_ENV,
+      timestamp: new Date().toISOString(),
+    }));
+  });
+}
 
 // Graceful shutdown (important for Kubernetes rolling updates)
 process.on('SIGTERM', () => {
